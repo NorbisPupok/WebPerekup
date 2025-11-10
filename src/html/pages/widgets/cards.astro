@@ -1,0 +1,224 @@
+astro
+---
+import Head from "@components/_head.astro"
+import Footer from "@components/dashboard/_footer.astro"
+import Topbar from "@components/dashboard/_topbar.astro"
+import Sidenav from "@components/dashboard/_sidenav.astro"
+import Scripts from "@components/_scripts.astro"
+
+const title = "AdminLTE 4 | Заявки"
+const path = "../../../dist"
+const mainPage = "widgets"
+const page = "cards";
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <!--begin::Head-->
+  <head>
+    <Head title={title} path={path} />
+  </head>
+  <!--end::Head-->
+  <!--begin::Body-->
+  <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+    <!--begin::App Wrapper-->
+    <div class="app-wrapper">
+      <Topbar path={path} />
+      <Sidenav path={path} mainPage={mainPage} page={page} />
+      <!--begin::App Main-->
+      <main class="app-main">
+        <!--begin::App Content Header-->
+        <div class="app-content-header">
+          <!--begin::Container-->
+          <div class="container-fluid">
+            <!--begin::Row-->
+            <div class="row">
+              <div class="col-sm-6">
+                <h3 class="mb-0">Заявки</h3>
+              </div>
+              <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-end">
+                </ol>
+              </div>
+            </div>
+            <!--end::Row-->
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::App Content Header-->
+        
+        <!--begin::App Content-->
+        <div class="app-content">
+          <!--begin::Container-->
+          <div class="container-fluid">
+
+            <!--begin::Row - КОНТЕЙНЕР ДЛЯ ДИНАМИЧЕСКИХ КАРТОЧЕК -->
+            <div id="submissions-container" class="row g-4 mb-4">
+              <!-- Карточки будут добавлены сюда с помощью JavaScript -->
+            </div>
+            <!--end::Row-->
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::App Content-->
+
+      </main>
+      <!--end::App Main-->
+      <Footer />
+    </div>
+    <!--end::App Wrapper-->
+    <!--begin::Script-->
+    <Scripts path={path} />
+    <!--end::Script-->
+
+    <!-- СКРИПТ ДЛЯ ЗАГРУЗКИ ДАННЫХ -->
+    <script>
+	document.addEventListener('DOMContentLoaded', function() {
+    const submissionsContainer = document.getElementById('submissions-container');
+    const apiUrl = 'https://https://webperekupserver.onrender.com/api/submissions';
+    const telegramBotToken = '8277125562:AAHd3QqkhPNR5gFY7kecrvud87sLTeCmF10'; // Вставьте ваш токен
+
+    submissionsContainer.innerHTML = '<p class="col-12 text-center">Загрузка заявок...</p>';
+
+    function fetchSubmissions() {
+        fetch(apiUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Ошибка HTTP: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                const submissions = result.data; // Предполагаем, что API возвращает { data: [...] }
+                submissionsContainer.innerHTML = '';
+
+                if (submissions && submissions.length > 0) {
+                    submissions.forEach(submission => {
+                        // Предполагаем, что каждая заявка имеет уникальный 'id'
+                        if (!submission.id) {
+                            console.error('Заявка без ID:', submission);
+                            return;
+                        }
+
+                        const colDiv = document.createElement('div');
+                        colDiv.className = 'col-md-6 col-lg-4';
+                        
+                        const card = document.createElement('div');
+                        card.className = 'card card-primary card-outline';
+                        card.dataset.submissionId = submission.id; // Сохраняем ID в data-атрибуте
+
+                        const cardHeader = document.createElement('div');
+                        cardHeader.className = 'card-header';
+                        cardHeader.innerHTML = `
+                            <h3 class="card-title">Заявка от: <strong>${submission.user_name}</strong></h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
+                                    <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
+                                    <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
+                                </button>
+                            </div>
+                        `;
+                        card.appendChild(cardHeader);
+
+                        const cardBody = document.createElement('div');
+                        cardBody.className = 'card-body';
+                        
+                        const userIdP = document.createElement('p');
+                        userIdP.innerHTML = `<strong>ID пользователя:</strong> ${submission.user_id}`;
+                        cardBody.appendChild(userIdP);
+
+                        const photoUrl = submission.file_path 
+                            ? `https://api.telegram.org/file/bot${telegramBotToken}/${submission.file_path}` 
+                            : 'https://via.placeholder.com/400x250.png?text=Нет+фото';
+
+                        const img = document.createElement('img');
+                        img.src = photoUrl;
+                        img.alt = `Фото от ${submission.user_name}`;
+                        img.className = 'img-fluid mb-2 rounded';
+                        img.style.maxHeight = '250px';
+                        img.style.width = 'auto';
+                        img.style.objectFit = 'cover';
+                        cardBody.appendChild(img);
+
+                        const postTextP = document.createElement('p');
+                        postTextP.innerHTML = `
+                            <strong>Сервер:</strong> ${submission.server}<br>
+                            <strong>Автомобиль:</strong> ${submission.car}<br>
+                            <strong>Цена:</strong> ${submission.price}
+                        `;
+                        cardBody.appendChild(postTextP);
+
+                        // --- ДОБАВЛЯЕМ КНОПКИ ---
+                        const actionButtonsDiv = document.createElement('div');
+                        actionButtonsDiv.className = 'd-flex gap-2';
+                        actionButtonsDiv.innerHTML = `
+                            <button class="btn btn-success btn-sm approve-btn">Одобрить</button>
+                            <button class="btn btn-danger btn-sm reject-btn">Отклонить</button>
+                        `;
+                        cardBody.appendChild(actionButtonsDiv);
+
+                        card.appendChild(cardBody);
+                        colDiv.appendChild(card);
+                        submissionsContainer.appendChild(colDiv);
+                    });
+                } else {
+                    submissionsContainer.innerHTML = '<p class="col-12 text-center">Нет новых заявок.</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при загрузке заявок:', error);
+                submissionsContainer.innerHTML = '<p class="col-12 text-center text-danger">Не удалось загрузить заявки.</p>';
+            });
+    }
+
+    // --- ДОБАВЛЯЕМ ОБРАБОТЧИК КЛИКОВ ---
+    submissionsContainer.addEventListener('click', function(event) {
+        const target = event.target;
+        const card = target.closest('.card');
+        if (!card) return;
+
+        const submissionId = card.dataset.submissionId;
+
+        if (target.classList.contains('approve-btn')) {
+            handleAction(submissionId, 'approve');
+        } else if (target.classList.contains('reject-btn')) {
+            handleAction(submissionId, 'reject');
+        }
+    });
+
+    async function handleAction(id, action) {
+        try {
+            const response = await fetch(`${apiUrl}/${id}/${action}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Возможно, понадобится авторизация, как на боте
+                    // 'Authorization': `Bearer ${WEB_API_KEY}` 
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Ошибка: ${response.status}`);
+            }
+
+            // Если все хорошо, убираем карточку с экрана
+            const cardToRemove = document.querySelector(`[data-submission-id="${id}"]`);
+            if (cardToRemove) {
+                cardToRemove.style.transition = 'opacity 0.5s';
+                cardToRemove.style.opacity = '0';
+                setTimeout(() => cardToRemove.remove(), 500);
+            }
+
+        } catch (error) {
+            console.error(`Ошибка при выполнении действия "${action}":`, error);
+            alert(`Не удалось ${action === 'approve' ? 'одобрить' : 'отклонить'} заявку. Попробуйте еще раз.`);
+        }
+    }
+
+    // Первоначальная загрузка
+    fetchSubmissions();
+});
+</script>
+
+  </body><!--end::Body-->
+</html>

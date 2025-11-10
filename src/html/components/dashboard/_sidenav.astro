@@ -1,0 +1,95 @@
+astro
+---
+import { convertPathToHtml } from "../../../utils/index.js"
+const { path, mainPage, page } = Astro.props
+const htmlPath = convertPathToHtml(path);
+
+// Smart path resolution: calculate relative path based on directory depth
+const pathname = Astro.url.pathname;
+const pathSegments = pathname.split('/').filter(segment => segment !== '');
+const depth = pathSegments.length > 0 ? pathSegments.length - 1 : 0;
+const deploymentPath = depth === 0 ? './' : '../'.repeat(depth);
+---
+
+<!--begin::Sidebar-->
+<aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+  <!--begin::Sidebar Brand-->
+  <div class="sidebar-brand">
+    <!--begin::Brand Link-->
+    <a href={htmlPath + "/index.html"} class="brand-link">
+      <!--begin::Brand Image-->
+      <img
+        src={deploymentPath + "assets/img/AdminLTELogo.png"}
+        alt="AdminLTE Logo"
+        class="brand-image opacity-75 shadow"
+      />
+      <!--end::Brand Image-->
+      <!--begin::Brand Text-->
+      <span class="brand-text fw-light">AdminLTE 4</span>
+      <!--end::Brand Text-->
+    </a>
+    <!--end::Brand Link-->
+  </div>
+  <!--end::Sidebar Brand-->
+  <!--begin::Sidebar Wrapper-->
+  <div class="sidebar-wrapper">
+    <nav class="mt-2">
+      <!--begin::Sidebar Menu-->
+      <ul
+        class="nav sidebar-menu flex-column"
+        data-lte-toggle="treeview"
+        role="navigation"
+        aria-label="Main navigation"
+        data-accordion="false"
+        id="navigation"
+      >
+        <!-- Оставляем только блок с Widgets -->
+        <li class:list={["nav-item", mainPage === "widgets" && "menu-open"]}>
+          <a
+            href="#"
+            class:list={["nav-link", mainPage === "widgets" && "active"]}
+          >
+            <i class="nav-icon bi bi-box-seam-fill"></i>
+            <p>
+              Работа с постами
+              <i class="nav-arrow bi bi-chevron-right"></i>
+            </p>
+          </a>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a
+                href={htmlPath + "/widgets/cards.html"}
+                class:list={["nav-link", page === "cards" && "active"]}
+              >
+                <i class="nav-icon bi bi-circle"></i>
+                <p>Заявки</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                href={htmlPath + "/widgets/test.html"}
+                class:list={["nav-link", page === "test" && "active"]}
+              >
+                <i class="nav-icon bi bi-circle"></i>
+                <p>История</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                href={htmlPath + "/widgets/test2.html"}
+                class:list={["nav-link", page === "test2" && "active"]}
+              >
+                <i class="nav-icon bi bi-circle"></i>
+                <p>Рассылка</p>
+              </a>
+            </li>
+          </ul>
+        </li>
+        <!-- Конец блока -->
+      </ul>
+      <!--end::Sidebar Menu-->
+    </nav>
+  </div>
+  <!--end::Sidebar Wrapper-->
+</aside>
+<!--end::Sidebar-->
